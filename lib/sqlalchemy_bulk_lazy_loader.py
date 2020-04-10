@@ -117,7 +117,8 @@ class BulkLazyLoader(LazyLoader):
         if self.parent_property.secondary is None:
             # for relationship without a secondary join criterion should look like: "COL = :param"
             if not isinstance(criterion, BinaryExpression):
-                self._unsupported_relation()
+                # self._unsupported_relation()
+                pass
         else:
             # for relationship with a secondary join criterion should look like: "T1.col1 = :param AND T1.col2 = T2.col"
             if not isinstance(criterion, BooleanClauseList):
@@ -131,8 +132,8 @@ class BulkLazyLoader(LazyLoader):
         if self._join_col is None:
             self._unsupported_relation()
 
-        if len(param_keys) != 1:
-            self._unsupported_relation()
+        # if len(param_keys) != 1:
+        #     self._unsupported_relation()
 
         key, ident, value = param_keys[0]
         if value is not None or ident is None:
@@ -196,6 +197,13 @@ class BulkLazyLoader(LazyLoader):
 
         # This is the core change from plain LazyLoader - use `Model.field IN (values)` instead of `Model.field = value`
         q = q.filter(self._join_col.in_(param_values))
+
+        # Alon's hack
+        if hasattr(self.parent_property.primaryjoin, 'clauses'):
+            q = q.filter(
+                *self.parent_property.primaryjoin.clauses
+            )
+
         results = q.all()
 
         param_value_to_results = {}
